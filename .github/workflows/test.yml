@@ -1,59 +1,56 @@
 name: Create Tag After PR Merge
 
 on:
-  pull_request:
-    types:
-      - closed
+    pull_request:
+        types:
+            - closed
 
 jobs:
-  create-tag:
-    if: github.event.pull_request.merged == true # Only proceed if the PR is merged
-    runs-on: ubuntu-latest
+    create-tag:
+        if: github.event.pull_request.merged == true # Only proceed if the PR is merged
+        runs-on: ubuntu-latest
 
-    steps:
-      # Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
 
-            # Set up Node.js
             - name: Set up Node.js
               uses: actions/setup-node@v3
               with:
                   node-version: '20'
 
-      # Install dependencies
-      - name: Install dependencies
-        run: npm install
+            # Install dependencies
+            - name: Install dependencies
+              run: npm install
 
-      # Increment version and commit changes
-      - name: Increment version and commit changes
-        id: versioning
-        run: |
-          # Read current version
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
-          
-          # Increment patch version (x.y.z -> x.y.(z+1))
-          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$3+=1; print}')
-          
-          # Update package.json with new version
-          jq --arg newVersion "$NEW_VERSION" '.version = $newVersion' package.json > package.json.tmp
-          mv package.json.tmp package.json
-          
-          # Commit changes
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json
-          git commit -m "chore: bump version to $NEW_VERSION"
-          
-          
-      # Push changes to the main branch
-      - name: Push changes
-        run: |
-          git push origin main
+            # Increment version and commit changes
+            - name: Increment version and commit changes
+              id: versioning
+              run: |
+                  # Read current version
+                  CURRENT_VERSION=$(node -p "require('./package.json').version")
 
-      # Create and push a new tag
-      - name: Create and push a tag
-        run: |
-          NEW_VERSION=${{ steps.versioning.outputs.new_version }}
-          git tag "v$NEW_VERSION"
-          git push origin "v$NEW_VERSION"
+                  # Increment patch version (x.y.z -> x.y.(z+1))
+                  NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$3+=1; print}')
+
+                  # Update package.json with new version
+                  jq --arg newVersion "$NEW_VERSION" '.version = $newVersion' package.json > package.json.tmp
+                  mv package.json.tmp package.json
+
+                  # Commit changes
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+                  git add package.json
+                  git commit -m "chore: bump version to $NEW_VERSION"
+
+            # Push changes to the main branch
+            - name: Push changes
+              run: |
+                  git push origin main
+
+            # Create and push a new tag
+            - name: Create and push a tag
+              run: |
+                  NEW_VERSION=${{ steps.versioning.outputs.new_version }}
+                  git tag "v$NEW_VERSION"
+                  git push origin "v$NEW_VERSION"
