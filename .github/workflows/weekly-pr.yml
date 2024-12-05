@@ -1,0 +1,26 @@
+name: Weekly PR from Development to Main
+
+on:
+    schedule:
+        - cron: '0 1 * * 0' # Runs every Sunday at 1 AM UTC
+    workflow_dispatch: # Allow manual triggering
+
+jobs:
+    create-pull-request:
+        runs-on: ubuntu-latest
+
+        steps:
+            # Checkout the repository
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            # Set up GitHub CLI
+            - name: Set up GitHub CLI
+              uses: mislav/gh-setup@v2
+
+            # Create or update the pull request
+            - name: Create or update PR
+              run: |
+                  # Create a PR from 'development' to 'main'
+                  gh pr create --base main --head development --title "Weekly Update: Development to Main" --body "This is an automated pull request." || \
+                  gh pr edit $(gh pr view --json number --jq '.number') --title "Weekly Update: Development to Main" --body "This is an automated pull request."
