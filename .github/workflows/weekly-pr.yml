@@ -20,22 +20,15 @@ jobs:
                   sudo apt-get update
                   sudo apt-get install -y gh
 
-            # Authenticate GitHub CLI
-            - name: Authenticate GitHub CLI
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  echo "${GITHUB_TOKEN}" | gh auth login --with-token
-
             # Create or update the pull request
             - name: Create or update PR
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   # Check if a PR already exists
-                  if gh pr view --base main --head development; then
+                  if gh pr view --base main --head development --json number --jq '.number'; then
                     # Update the existing PR
-                    gh pr edit $(gh pr view --json number --jq '.number') \
+                    gh pr edit $(gh pr view --base main --head development --json number --jq '.number') \
                       --title "Weekly Update: Development to Main" \
                       --body "This is an automated pull request."
                   else
