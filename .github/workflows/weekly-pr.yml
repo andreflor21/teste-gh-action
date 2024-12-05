@@ -14,13 +14,33 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v3
 
-            # Set up GitHub CLI
-            - name: Set up GitHub CLI
-              uses: mislav/gh-setup@v2
+            # Install GitHub CLI
+            - name: Install GitHub CLI
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y gh
+
+            # Authenticate GitHub CLI
+            - name: Authenticate GitHub CLI
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  echo "${GITHUB_TOKEN}" | gh auth login --with-token
 
             # Create or update the pull request
             - name: Create or update PR
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  # Create a PR from 'development' to 'main'
-                  gh pr create --base main --head development --title "Weekly Update: Development to Main" --body "This is an automated pull request." || \
-                  gh pr edit $(gh pr view --json number --jq '.number') --title "Weekly Update: Development to Main" --body "This is an automated pull request."
+                  # Check if a PR already exists
+                  if gh pr view --base main --head development; then
+                    # Update the existing PR
+                    gh pr edit $(gh pr view --json number --jq '.number') \
+                      --title "Weekly Update: Development to Main" \
+                      --body "This is an automated pull request."
+                  else
+                    # Create a new PR
+                    gh pr create --base main --head development \
+                      --title "Weekly Update: Development to Main" \
+                      --body "This is an automated pull request."
+                  fi
