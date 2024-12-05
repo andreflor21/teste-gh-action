@@ -1,23 +1,27 @@
-name: Create Tag After PR Merge
+name: Weekly Push and Tag
 
 on:
-    pull_request:
-        types:
-            - closed
+    # Scheduled trigger (every Sunday at midnight UTC)
+    schedule:
+        - cron: '0 0 * * 0'
+
+    # Manual trigger
+    workflow_dispatch:
 
 jobs:
-    create-tag:
-        if: github.event.pull_request.merged == true # Only proceed if the PR is merged
+    update-version:
         runs-on: ubuntu-latest
 
         steps:
+            # Checkout the repository
             - name: Checkout repository
               uses: actions/checkout@v3
 
+            # Set up Node.js
             - name: Set up Node.js
               uses: actions/setup-node@v3
               with:
-                  node-version: '20'
+                  node-version: '16'
 
             # Install dependencies
             - name: Install dependencies
@@ -42,6 +46,9 @@ jobs:
                   git config user.email "github-actions[bot]@users.noreply.github.com"
                   git add package.json
                   git commit -m "chore: bump version to $NEW_VERSION"
+
+                  # Set the new version as an output
+                  echo "::set-output name=new_version::$NEW_VERSION"
 
             # Push changes to the main branch
             - name: Push changes
